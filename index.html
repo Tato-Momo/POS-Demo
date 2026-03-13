@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Royal Chef POS</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<style>
+
+body{
+    font-family: Arial;
+    margin:0;
+    background:#f2f2f2;
+}
+
+/* Header */
+
+.header{
+    background:#ad1829;
+    color:white;
+    text-align:center;
+    padding:20px;
+    font-size:28px;
+    font-weight:bold;
+}
+
+.admin-btn{
+	position:absolute;
+	right:20px;
+	top:20px;
+	background:white;
+	border:none;
+	padding:8px 12px;
+	font-size:20px;
+	border-radius:6px;
+	cursor:pointer;
+}
+
+/* Main layout */
+
+.container{
+    display:flex;
+    height:calc(100vh - 80px);
+}
+
+/* Menu section */
+
+/* Categories */
+
+.categories{
+	width:15%;
+	background:#333;
+	padding:20px;
+	display:flex;
+	flex-direction:column;
+	gap:15px;
+}
+
+.categories button{
+	padding:18px;
+	font-size:18px;
+	background:#444;
+	color:white;
+	border:none;
+	border-radius:10px;
+	cursor:pointer;
+}
+
+.categories button:hover{
+	background:#222;
+}
+
+/* Adjust menu width */
+
+.menu{
+	width:50%;
+	display:grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap:20px;
+	padding:25px;
+	overflow-y: auto;
+	max-height: calc(100vh - 120px);
+	align-content: Start;
+}
+
+/* Menu buttons */
+
+.menu button{
+    background:#2f6bd1;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:30px;
+    font-size:20px;
+    cursor:pointer;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.menu button:hover{
+    background:#1f4fa3;
+}
+
+.price{
+    display:block;
+    font-size:16px;
+    margin-top:10px;
+}
+
+
+/* --- ADMIN DASHBOARD STYLES --- */
+
+.admin-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.admin-stat-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.admin-stat-card.total-card {
+    grid-column: span 2;
+    background: #e8f4e8;
+    border-color: #c3e6cb;
+}
+
+.admin-stat-card h4 {
+    margin: 0 0 8px 0;
+    color: #6c757d;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.admin-stat-card .amount {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin: 0;
+}
+
+.admin-stat-card.total-card .amount {
+    color: #28a745;
+    font-size: 32px;
+}
+
+.admin-section-title {
+    color: #1e4fa3;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.admin-items-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 5px 15px;
+    background: #fff;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.admin-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #eee;
+    font-size: 16px;
+}
+
+.admin-item-row:last-child {
+    border-bottom: none;
+}
+
+.admin-item-name {
+    font-weight: bold;
+    color: #444;
+}
+
+.admin-item-qty {
+    background: #1e4fa3;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.admin-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 2px solid #eee;
+}
+
+.admin-btn-action {
+    padding: 15px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    transition: background 0.2s;
+}
+
+.btn-summary { background: #5cb85c; color: white; }
+.btn-summary:hover { background: #4cae4c; }
+
+.btn-export { background: #5cb85c; color: white; }
+.btn-export:hover { background: #4cae4c; }
+
+.btn-reset { background: #d9534f; color: white; }
+.btn-reset:hover { background: #c9302c; }
+
+.btn-close-admin { background: #6c757d; color: white; grid-column: span 2; }
+.btn-close-admin:hover { background: #5a6268; }
+
+
+/* Order panel */
+
+.order-table{
+	margin-top:10px;
+}
+
+.order-header,
+	.order-row{
+	display:grid;
+	grid-template-columns: 1fr 120px 100px;
+	align-items:center;
+	padding:8px 0;
+}
+
+.order-header{
+	font-weight:bold;
+	border-bottom:2px solid #ddd;
+	margin-bottom:10px;
+	display:grid;
+	grid-template-columns: 1fr 120px 100px;
+	background:#f5f5f5;
+	padding:10px 0;
+}
+
+.order-header span:nth-child(2){
+	text-align:center;
+}
+
+.order-header span:nth-child(3){
+	text-align:right;
+	padding-right:10px;
+}
+
+.order-row{
+	display:grid;
+	grid-template-columns: 1fr 120px 100px;
+	align-items:center;
+	padding:8px 0;
+	border-bottom:1px solid #eee;
+}
+
+.order-row span:nth-child(2){
+	text-align:center;
+}
+
+.order-row span:nth-child(3){
+	text-align:right;
+	padding-right:10px;
+}
+
+.qty-controls{
+	display:flex;
+	justify-content:center;
+	align-items:center;
+	gap:6px;
+}
+
+.qty-controls button{
+	background:#2f6bd1;
+	color:white;
+	border:none;
+	width:30px;
+	height:30px;
+	border-radius:6px;
+	font-size:18px;
+	cursor:pointer;
+}
+
+.qty-number{
+	min-width:20px;
+	text-align:center;
+	font-weight:bold;
+}
+
+.order-panel{
+    width:40%;
+    background:white;
+    padding:20px;
+    border-left:3px solid #ddd;
+    overflow-y: auto;
+    max-height: calc(100vh - 80px);
+}
+
+.order-panel h2{
+    margin-top:0;
+}
+
+.order-list{
+    min-height:300px;
+    margin-bottom:20px;
+}
+
+.order-item{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:12px;
+    padding-bottom:4px;
+    border-bottom:1px dotted #eee;
+    font-size:18px;
+}
+
+.order-item:last-child {
+    border-bottom: none;
+}
+
+.total{
+    font-size:24px;
+    font-weight:bold;
+    margin-top:20px;
+    text-align:right;
+}
+
+/* Buttons */
+
+.controls button{
+    width:100%;
+    padding:15px;
+    margin-top:10px;
+    font-size:18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.clear{
+    background:#d9534f;
+    color:white;
+}
+
+.print{
+    background:#5cb85c;
+    color:white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.print:hover {
+    background: #4cae4c;
+}
+
+.qty-controls{
+	display:flex;
+	align-items:center;
+	gap:8px;
+}
+
+.qty-controls button{
+	background:#2f6bd1;
+	color:white;
+	border:none;
+	width:32px;
+	height:32px;
+	font-size:18px;
+	border-radius:6px;
+	cursor:pointer;
+}
+
+.qty{
+	font-weight:bold;
+	min-width:20px;
+	text-align:center;
+}
+
+.order-row:hover{
+	background:#f7f7f7;
+}
+
+.last-added{
+	background:#fff3cd;
+	animation:fadeHighlight 1.2s ease-out;
+}
+
+@keyframes fadeHighlight{
+	0% { background:#ffe69c; }
+	100% { background:transparent; }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border-radius: 15px;
+    width: 80%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    font-size: 28px;
+    font-weight: bold;
+    color: #1e4fa3;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 15px;
+}
+
+.order-summary {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.summary-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    font-weight: bold;
+    padding: 10px 0;
+    border-bottom: 2px solid #333;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.summary-header .item-col {
+    text-align: left;
+}
+
+.summary-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    padding: 8px 0;
+    border-bottom: 1px dashed #ddd;
+    text-align: center;
+}
+
+.summary-item .item-name {
+    text-align: left;
+}
+
+.summary-total {
+    font-size: 24px;
+    font-weight: bold;
+    text-align: right;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 2px solid #333;
+}
+
+.payment-options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 25px 0;
+    flex-wrap: wrap;
+}
+
+.payment-btn {
+    padding: 15px 20px;
+    font-size: 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    flex: 1;
+    min-width: 100px;
+    max-width: 130px;
+}
+
+.payment-btn:hover {
+    transform: scale(1.05);
+}
+
+.payment-btn.selected {
+    border: 4px solid #333;
+    transform: scale(1.05);
+}
+
+.payment-btn.cash {
+    background: #5cb85c;
+    color: white;
+}
+
+.payment-btn.card {
+    background: #2f6bd1;
+    color: white;
+}
+
+.payment-btn.transfer {
+    background: #f0ad4e;
+    color: white;
+}
+
+.print-order-btn {
+    background: #5cb85c;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    padding: 20px;
+    width: 100%;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 20px 0;
+    display: none;
+}
+
+.print-order-btn:hover {
+    background: #4cae4c;
+}
+
+.close-modal-btn {
+    background: #d9534f;
+    color: white;
+    font-size: 18px;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.close-modal-btn:hover {
+    background: #c9302c;
+}
+
+.selected-payment {
+    text-align: center;
+    font-size: 20px;
+    margin: 15px 0;
+    padding: 15px;
+    background: #e8f4e8;
+    border-radius: 8px;
+    display: none;
+}
+@media print {
+	body *{
+		visibility:hidden;
+	}
+
+	#receipt, #receipt *{
+		visibility:visible;
+	}
+
+	#receipt{
+		position:absolute;
+		left:0;
+		top:0;
+		width:280px;
+	}
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+ROYAL CHEF
+<button class="admin-btn" onclick="openAdmin()">⚙</button>
+</div>
+
+<div class="container">
+
+<!-- Side Category Buttons -->
+
+<div class="categories">
+
+<button onclick="loadCategory('food')">Food</button>
+<button onclick="loadCategory('sauce')">Sauce</button>
+<button onclick="loadCategory('drinks')">Drinks</button>
+<button onclick="loadCategory('setmeal')">Set Meal</button>
+
+</div>
+
+<!-- MENU -->
+
+<div class="menu" id="menuButtons"></div>
+
+<!-- ORDER PANEL -->
+
+	<div class="order-table">
+
+	<h2>Order</h2>
+
+	<div class="order-header">
+		<span>Item</span>
+		<span>Qty</span>
+		<span>Price</span>
+	</div>
+	
+	<div id="orderList" class="order-list"></div>
+
+		<div class="total">
+		Total: £<span id="total">0</span>
+		</div>
+
+			<div class="controls">
+
+			<button class="clear" onclick="clearOrder()">Clear Order</button>
+
+			<button class="print" onclick="showConfirmationModal()">Review Order & Pay</button>
+
+			</div>
+
+		</div>
+
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            Order Confirmation
+        </div>
+        
+        <div class="order-summary" id="modalOrderSummary">
+            <!-- Order items will be populated here -->
+        </div>
+        
+        <h3 style="text-align: center; margin: 20px 0;">Select Payment Method</h3>
+        
+        <div class="payment-options">
+            <button class="payment-btn cash" onclick="selectPayment('Cash')">CASH</button>
+            <button class="payment-btn card" onclick="selectPayment('Card')">CARD</button>
+            <button class="payment-btn transfer" onclick="selectPayment('Transfer')">TRANSFER</button>
+        </div>
+        
+        <div id="selectedPaymentDisplay" class="selected-payment"></div>
+        
+        <button id="printOrderBtn" class="print-order-btn" onclick="processPaymentAndPrint()">
+            PRINT ORDER
+        </button>
+        
+        <button class="close-modal-btn" onclick="closeModal()">
+            Cancel Order
+        </button>
+    </div>
+</div>
+
+<!-- Admin Panel -->
+<div id="adminPanel" class="modal">
+	<div class="modal-content">
+		<div class="modal-header">
+			Admin Dashboard
+		</div>
+
+		<div id="salesDashboard"></div>
+
+		<div class="admin-actions">
+			<button onclick="printSummary()" class="admin-btn-action btn-summary">
+				📥 Print Summary
+			</button>
+		
+			<button onclick="exportSales()" class="admin-btn-action btn-export">
+				📥 Export Sales
+			</button>
+
+			<button onclick="resetSales()" class="admin-btn-action btn-reset">
+				🗑️ Reset Day
+			</button>
+
+			<button onclick="closeAdmin()" class="admin-btn-action btn-close-admin">
+				Close Dashboard
+			</button>
+		</div>
+	</div>
+</div>
+
+<script>
+// Creating Order History 
+let orderHistory = JSON.parse(localStorage.getItem("posOrders")) || [];
+
+let lastAddedItem = null;
+
+const menuData = {
+
+food:[
+{name:"Veg Spring Rolls",price:5},
+{name:"Salt & Pepper Chips",price:5},
+{name:"Salt & Pepper Ribs",price:8},
+{name:"Chicken Wings",price:8},
+{name:"Prawn Crackers",price:3}
+],
+
+sauce:[
+{name:"Curry Sauce",price:3},
+{name:"Sweet Chilli Sauce",price:3},
+{name:"Hoi Sin Sauce",price:3},
+{name:"Chilli Oil",price:3}
+],
+
+drinks:[
+{name:"Coke",price:3},
+{name:"Diet Coke",price:3},
+{name:"Tango",price:3},
+{name:"7UP",price:3},
+{name:"Water",price:2}
+],
+
+setmeal:[
+{name:"Set Meal A",price:12},
+{name:"Set Meal B",price:15}
+]
+
+};
+
+let selectedPaymentMethod = null;
+let order = {};
+
+function loadCategory(category){
+    let menu = document.getElementById("menuButtons");
+    menu.innerHTML = "";
+    
+    menuData[category].forEach(item=>{
+        menu.innerHTML += `
+        <button onclick="addItem('${item.name.replace(/'/g, "\\'")}',${item.price})">
+        ${item.name}
+        <span class="price">£${item.price}</span>
+        </button>
+        `;
+    });
+}
+
+// Load food category by default
+loadCategory('food');
+
+function addItem(name, price){
+
+lastAddedItem = name;
+
+    if(order[name]){
+        order[name].qty++;
+    }else{
+        order[name] = {price: price, qty: 1};
+    }
+    updateOrder();
+}
+
+function increaseItem(item){
+	order[item].qty++;
+	updateOrder();
+}
+
+function decreaseItem(item){
+	order[item].qty--;
+	if(order[item].qty <= 0){
+		delete order[item];
+	}
+	updateOrder();
+}
+
+function updateOrder(){
+    let orderList = document.getElementById("orderList");
+    orderList.innerHTML = "";
+    let total = 0;
+	
+	
+    for(let item in order){
+        let qty = order[item].qty;
+        let price = order[item].price;
+        let subtotal = qty * price;
+        total += subtotal;
+
+		let highlightClass = item === lastAddedItem ? "last-added" : "";
+		orderList.innerHTML += `
+		<div class="order-row ${highlightClass}">
+		<span>${item}</span>
+		<span class="qty-controls">
+		<button onclick="decreaseItem(\`${item}\`)">−</button>
+		<span class="qty-number">${qty}</span>
+		<button onclick="increaseItem(\`${item}\`)">+</button>
+		</span>
+		<span>£${subtotal.toFixed(2)}</span>
+		</div>`;
+    }
+
+    document.getElementById("total").innerText = total.toFixed(2);
+	lastAddedItem = null;
+}
+
+function clearOrder(){
+    order = {};
+    updateOrder();
+}
+
+function showConfirmationModal() {
+    if (Object.keys(order).length === 0) {
+        alert("No items in order!");
+        return;
+    }
+    
+    // Reset selected payment
+    selectedPaymentMethod = null;
+    document.getElementById("selectedPaymentDisplay").style.display = "none";
+    document.getElementById("printOrderBtn").style.display = "none";
+    
+    // Remove selected class from all payment buttons
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Populate order summary with three columns
+    let summaryHtml = `
+        <div class="summary-header">
+            <span class="item-col">Item</span>
+            <span>Qty</span>
+            <span>Price</span>
+        </div>
+    `;
+    let total = 0;
+    
+    for (let item in order) {
+        let qty = order[item].qty;
+        let price = order[item].price;
+        let subtotal = qty * price;
+        total += subtotal;
+        
+        summaryHtml += `
+        <div class="summary-item">
+            <span class="item-name">${item}</span>
+            <span>${qty}</span>
+            <span>£${subtotal.toFixed(2)}</span>
+        </div>
+        `;
+    }
+    
+    summaryHtml += `
+    <div class="summary-total">
+        Total: £${total}
+    </div>
+    `;
+    
+    document.getElementById("modalOrderSummary").innerHTML = summaryHtml;
+    
+    // Show modal
+    document.getElementById("confirmationModal").style.display = "block";
+}
+
+function selectPayment(method) {
+    selectedPaymentMethod = method;
+    
+    // Remove selected class from all payment buttons
+    document.querySelectorAll('.payment-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked button
+    event.target.classList.add('selected');
+    
+    // Show selected payment and print button
+    document.getElementById("selectedPaymentDisplay").innerHTML = `Payment Method: <strong>${method}</strong>`;
+    document.getElementById("selectedPaymentDisplay").style.display = "block";
+    document.getElementById("printOrderBtn").style.display = "block";
+}
+
+function processPaymentAndPrint() {
+    if (!selectedPaymentMethod) {
+        alert("Please select a payment method first!");
+        return;
+    }
+    
+	//Save Order Details To Database
+	saveOrder(selectedPaymentMethod);
+	
+    // Print the receipt with payment info
+    printReceipt(selectedPaymentMethod);
+    
+    // Close modal
+    closeModal();
+    
+    // Clear order for new orders
+    clearOrder();
+}
+
+// Save Function
+function saveOrder(paymentMethod){
+
+    let total = 0;
+
+    for(let item in order){
+        total += order[item].price * order[item].qty;
+    }
+
+    let now = new Date();
+
+    let record = {
+        items: JSON.parse(JSON.stringify(order)),
+        total: total,
+        payment: paymentMethod,
+        time: now.toLocaleTimeString()
+    };
+
+    orderHistory.push(record);
+
+    localStorage.setItem("posOrders", JSON.stringify(orderHistory));
+}
+
+function closeModal() {
+    document.getElementById("confirmationModal").style.display = "none";
+    selectedPaymentMethod = null;
+}
+
+function printReceipt(paymentMethod) {
+    let orderNumber = Date.now().toString().slice(-4)
+    let now = new Date();
+    let date = now.toLocaleDateString();
+    let time = now.toLocaleTimeString();
+    
+    let receiptItems = "";
+    let total = 0;
+
+    for (let item in order) {
+        let qty = order[item].qty;
+        let price = order[item].price;
+        let subtotal = qty * price;
+        total += subtotal;
+        
+        // Format price with 2 decimal places
+        let formattedSubtotal = subtotal.toFixed(2);
+        
+        // Create three-column row with fixed widths using tables for perfect alignment
+        receiptItems += `
+            <tr>
+                <td style="text-align: left; padding: 4px 0;">${item}</td>
+                <td style="text-align: center; padding: 4px 0;">${qty}</td>
+                <td style="text-align: right; padding: 4px 0;">£${formattedSubtotal}</td>
+            </tr>
+        `;
+    }
+
+    let printWindow = window.open('', '', 'width=400,height=700');
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Receipt</title>
+            <style>
+                body {
+                    font-family: 'Courier New', monospace;
+                    width: 70mm;
+                    margin: 0 auto;
+                    padding: 3mm;
+                    background: white;
+                    font-size: 18px;
+                    line-height: 1.3;
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 3mm;
+                }
+                .restaurant-name {
+                    font-size: 25px;
+                    font-weight: bold;
+                    letter-spacing: 1px;
+                    margin-bottom: 2mm;
+                }
+                .order-info {
+                    font-size: 16px;
+                    margin: 3px 0;
+                }
+                .order-number {
+                    font-size: 20px;
+                    font-weight: bold;
+                    margin: 3px 0;
+					padding: 1px;
+                    background: #f0f0f0;
+                }
+                .payment-info {
+                    font-size: 20px;
+                    font-weight: bold;
+                    margin: 3px 0;
+					padding: 1px;
+                    background: ${paymentMethod === 'Cash' ? '#d4edda' : paymentMethod === 'Card' ? '#cce5ff' : '#fff3cd'};
+                }
+                hr {
+                    border: none;
+                    border-top: 1px dashed #000;
+                    margin: 2mm 0;
+                }
+                .items {
+					font-size: 16px;
+                    margin: 3mm 0;
+					padding: 1px;
+                    width: 100%;
+                }
+                table {
+                    width: 98%;
+                    border-collapse: collapse;
+                }
+                th {
+                    text-align: left;
+                    font-weight: bold;
+                    border-bottom: 1px solid #000;
+                    padding: 3px 0;
+                }
+                th:nth-child(2) {
+                    text-align: center;
+                }
+                th:nth-child(3) {
+                    text-align: right;
+                }
+                td {
+                    padding: 3px 0;
+                }
+                td:nth-child(2) {
+                    text-align: center;
+                }
+                td:nth-child(3) {
+                    text-align: right;
+                }
+                .total-section {
+                    margin: 3px 0;
+                    text-align: right;
+                    font-size: 20px;
+                    font-weight: bold;
+                    border-top: 2px solid #000;
+                    padding-top: 2mm;
+					padding-right: 2mm;
+                }
+                .thank-you {
+                    text-align: center;
+                    margin-top: 4mm;
+                    font-size: 18px;
+                    font-weight: bold;
+                }
+                @media print {
+                    body {
+                        width: 98%;
+                        margin: 0;
+                        padding: 2mm;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+			<div id="receipt">
+			<!-- receipt content -->
+
+				<div class="header">
+					<div class="restaurant-name">ROYAL CHEF</div>
+					<hr>
+					<div class="order-info">${date} ${time}</div>
+					<div class="order-number">ORDER NO: ${orderNumber}</div>
+					<div class="payment-info">PAID BY: ${paymentMethod}</div>
+					
+				</div>
+				
+				<div class="items">
+					<table>
+						<thead>
+							<tr>
+								<th>Item</th>
+								<th>Qty</th>
+								<th>Price</th>
+							</tr>
+						</thead>
+						<tbody>
+							${receiptItems}
+						</tbody>
+					</table>
+				</div>
+				
+				<div class="total-section">
+					TOTAL: £${total.toFixed(2)}
+				</div>
+				
+				<div class="thank-you">
+					Thank You!
+				</div>
+			</div>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Small delay to ensure content is loaded
+    setTimeout(() => {
+        printWindow.print();
+    }, 250);
+}
+
+// Summary function
+function showStats(){
+
+	let cash = 0;
+	let card = 0;
+	let transfer = 0;
+	let items = {};
+
+	orderHistory.forEach(o=>{
+
+		if(o.payment === "Cash") cash += o.total;
+		if(o.payment === "Card") card += o.total;
+		if(o.payment === "Transfer") transfer += o.total;
+
+		for(let i in o.items){
+
+			if(!items[i]) items[i] = 0;
+
+			items[i] += o.items[i].qty;
+
+		}
+
+	});
+
+	let topItem = Object.entries(items).sort((a,b)=>b[1]-a[1])[0];
+
+	alert(
+	`TODAY'S SALES
+
+	Cash: £${cash.toFixed(2)}
+	Card: £${card.toFixed(2)}
+	Transfer: £${transfer.toFixed(2)}
+
+	Total: £${(cash+card+transfer).toFixed(2)}
+
+	Top Item: ${topItem ? topItem[0] : "None"}`
+	);
+
+}
+
+// Open Admin Menu
+function openAdmin(){
+
+	generateDashboard();
+
+	document.getElementById("adminPanel").style.display = "block";
+
+}
+
+// Close Admin Menu
+function closeAdmin(){
+
+	document.getElementById("adminPanel").style.display = "none";
+
+}
+
+// Generate Sales Dashboard In Admin Menu
+function generateDashboard(){
+
+	let cash = 0;
+	let card = 0;
+	let transfer = 0;
+	let items = {};
+
+	orderHistory.forEach(o=>{
+		if(o.payment === "Cash") cash += o.total;
+		if(o.payment === "Card") card += o.total;
+		if(o.payment === "Transfer") transfer += o.total;
+
+		for(let i in o.items){
+			if(!items[i]) items[i] = 0;
+			items[i] += o.items[i].qty;
+		}
+	});
+
+	let total = cash + card + transfer;
+	let sortedItems = Object.entries(items).sort((a,b)=>b[1]-a[1]);
+	let itemHtml = "";
+
+    if (sortedItems.length > 0) {
+        sortedItems.forEach(i=>{
+            itemHtml += `
+            <div class="admin-item-row">
+                <span class="admin-item-name">${i[0]}</span>
+                <span class="admin-item-qty">${i[1]}</span>
+            </div>
+            `;
+        });
+    } else {
+        itemHtml = `<div style="text-align:center; padding: 30px 10px; color: #999; font-style: italic;">No sales yet today</div>`;
+    }
+
+    document.getElementById("salesDashboard").innerHTML = `
+        <h3 class="admin-section-title">Today's Revenue</h3>
+        
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card total-card">
+                <h4>Total Sales</h4>
+                <p class="amount">£${total.toFixed(2)}</p>
+            </div>
+            <div class="admin-stat-card">
+                <h4>Cash</h4>
+                <p class="amount" style="color: #5cb85c;">£${cash.toFixed(2)}</p>
+            </div>
+            <div class="admin-stat-card">
+                <h4>Card</h4>
+                <p class="amount" style="color: #2f6bd1;">£${card.toFixed(2)}</p>
+            </div>
+            <div class="admin-stat-card">
+                <h4>Transfer</h4>
+                <p class="amount" style="color: #f0ad4e;">£${transfer.toFixed(2)}</p>
+            </div>
+        </div>
+
+        <h3 class="admin-section-title">Items Sold</h3>
+        
+        <div class="admin-items-container">
+            ${itemHtml}
+        </div>
+    `;
+}
+
+// Print Summary of Daily Sales
+function printSummary() {
+    let cash = 0, card = 0, transfer = 0;
+    let items = {};
+
+    orderHistory.forEach(o => {
+        if (o.payment === "Cash") cash += o.total;
+        if (o.payment === "Card") card += o.total;
+        if (o.payment === "Transfer") transfer += o.total;
+
+        for (let i in o.items) {
+            if (!items[i]) items[i] = 0;
+            items[i] += o.items[i].qty;
+        }
+    });
+
+    let total = cash + card + transfer;
+
+    // Generate HTML Table for Items
+    let itemRows = "";
+    for (let i in items) {
+        let name = i.substring(0, 18);
+        let qty = items[i].toString().padStart(2, " ");
+        itemRows += `<tr><td>${i}</td><td class="qty">${items[i]}</td></tr>`;
+    }
+
+    let printWindow = window.open("", "Summary", "width=300");
+
+    printWindow.document.write(`
+    <html>
+        <head>
+            <style>
+                /* Remove browser headers/footers and set narrow margins */
+                @page { 
+                    size: 70mm auto; 
+                    margin: 0; 
+                }
+                
+                body { 
+                    font-family: 'Courier New', Courier, monospace; 
+                    width: 70mm; /* Match your printer paper */
+                    margin: 0;
+                    padding: 2mm;
+                    font-size: 16px;
+					zoom: 1.2;
+                    color: #000;
+					-webkit-print-color-adjust: exact;
+                }
+
+               .header { text-align: center; font-weight: bold; font-size: 22px; }
+                .divider { border-top: 1px dashed #000; margin: 5px 0; }
+                .flex-row { display: flex; justify-content: space-between; font-size: 18px; }
+                .total-row { font-weight: bold; font-size: 20px; margin-top: 5px; }
+                
+                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; }
+                th { text-align: left; border-bottom: 1px solid #000; }
+                .qty { text-align: right; width: 30px; }
+                .footer { text-align: center; margin-top: 15px; padding-bottom: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">ROYAL CHEF</div>
+            <div style="text-align:center; font-size: 14px;">Sales Summary</div>
+            <div class="divider"></div>
+            
+            <div class="flex-row"><span>Cash:</span><span>£${cash.toFixed(2)}</span></div>
+            <div class="flex-row"><span>Card:</span><span>£${card.toFixed(2)}</span></div>
+            <div class="flex-row"><span>Transfer:</span><span>£${transfer.toFixed(2)}</span></div>
+            
+            <div class="divider"></div>
+            <div class="flex-row total-row"><span>TOTAL:</span><span>£${total.toFixed(2)}</span></div>
+
+            <table>
+                <thead>
+                    <tr><th>Items Sold</th><th class="qty">Qty</th></tr>
+                </thead>
+                <tbody>${itemRows}</tbody>
+            </table>
+
+            <div class="footer">Thank You</div>
+        </body>
+    </html>
+    `);
+
+    printWindow.document.close();
+    
+    // Slight delay to ensure styles load before the print dialog pops up
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 250);
+}
+
+// Export JSON File Of Daily Sales
+function exportSales(){
+
+	let data = JSON.stringify(orderHistory,null,2);
+
+	let blob = new Blob([data],{type:"application/json"});
+
+	let a = document.createElement("a");
+
+	a.href = URL.createObjectURL(blob);
+
+	a.download = "royalchef-sales.json";
+
+	a.click();
+
+}
+
+// Clear Sales Data
+function resetSales(){
+
+    const pin = prompt("Enter Admin PIN");
+
+    if(pin !== "0000"){
+        alert("Incorrect PIN");
+        return;
+    }
+
+    if(confirm("Reset all sales data for today?")){
+		localStorage.removeItem("posOrders");
+		orderHistory = [];
+		alert("Sales Reset");
+		generateDashboard();
+    }
+}
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+
+</script>
+
+
+</body>
+</html>

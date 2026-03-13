@@ -1,0 +1,21 @@
+{
+  "name": "Royal Chef POS",
+  "short_name": "RoyalChefPOS",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "orientation": "landscape",
+  "icons": [
+    {
+      "src": "RC_Logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "RC_Logo2.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
