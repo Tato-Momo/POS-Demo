@@ -226,6 +226,9 @@ body{
 .btn-export { background: #5cb85c; color: white; }
 .btn-export:hover { background: #4cae4c; }
 
+.btn-backup { background: #d9534f; color: white; }
+.btn-backup:hover { background: #4cae4c; }
+
 .btn-reset { background: #d9534f; color: white; }
 .btn-reset:hover { background: #c9302c; }
 
@@ -611,7 +614,6 @@ ROYAL CHEF
 <button onclick="loadCategory('food')">Food</button>
 <button onclick="loadCategory('sauce')">Sauce</button>
 <button onclick="loadCategory('drinks')">Drinks</button>
-<button onclick="loadCategory('setmeal')">Set Meal</button>
 
 </div>
 
@@ -698,6 +700,10 @@ ROYAL CHEF
 				📥 Export Sales
 			</button>
 
+			<button onclick="backupSalesData()" class="admin-btn-action btn-backup">
+				Backup Data
+			</button>
+
 			<button onclick="resetSales()" class="admin-btn-action btn-reset">
 				🗑️ Reset Day
 			</button>
@@ -718,31 +724,33 @@ let lastAddedItem = null;
 const menuData = {
 
 food:[
-{name:"Veg Spring Rolls",price:5},
-{name:"Salt & Pepper Chips",price:5},
-{name:"Salt & Pepper Ribs",price:8},
-{name:"Chicken Wings",price:8},
-{name:"Prawn Crackers",price:3}
+	{name:"Chatpate",price:7},
+	{name:"Chicken Wings",price:10},
+	{name:"Chips",price:5},
+	{name:"Fish Cakes (4)",price:7},
+	{name:"Momo",price:10},
+	{name:"Nuggets (6)",price:5},
+	{name:"Papaya Salad",price:7},
+	{name:"S&P Ribs",price:10},
+	{name:"Sausages (4)",price:7},
+	{name:"Spicy Chips",price:7},
+	{name:"Spring Rolls (5)",price:5},
+	{name:"Kids Meal",price:10}
 ],
 
 sauce:[
-{name:"Curry Sauce",price:3},
-{name:"Sweet Chilli Sauce",price:3},
-{name:"Hoi Sin Sauce",price:3},
-{name:"Chilli Oil",price:3}
+	{name:"Sweet Chilli",price:2},
+	{name:"Chilli Oil",price:2},
+	{name:"Curry Sauce",price:3}
 ],
 
 drinks:[
-{name:"Coke",price:3},
-{name:"Diet Coke",price:3},
-{name:"Tango",price:3},
-{name:"7UP",price:3},
-{name:"Water",price:2}
-],
-
-setmeal:[
-{name:"Set Meal A",price:12},
-{name:"Set Meal B",price:15}
+	{name:"TEA",price:3},
+	{name:"Coke",price:3},
+	{name:"Diet Coke",price:3},
+	{name:"Tango",price:3},
+	{name:"7UP",price:3},
+	{name:"Water",price:2}
 ]
 
 };
@@ -1379,6 +1387,22 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js");
 }
 
+function backupSalesData() {
+
+  const data = localStorage.getItem("orderHistory");
+
+  if (!data) return;
+
+  const blob = new Blob([data], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "royalchef_backup_" + new Date().toISOString() + ".json";
+  a.click();
+}
+
+setInterval(backupSalesData, 600000);
 </script>
 
 
