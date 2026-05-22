@@ -537,7 +537,7 @@ body{
     color: white;
 }
 
-.print-order-btn {
+.save-order-btn {
     background: #5cb85c;
     color: white;
     font-size: 24px;
@@ -551,7 +551,7 @@ body{
     display: none;
 }
 
-.print-order-btn:hover {
+.save-order-btn:hover {
     background: #4cae4c;
 }
 
@@ -579,21 +579,66 @@ body{
     border-radius: 8px;
     display: none;
 }
-@media print {
-	body *{
-		visibility:hidden;
-	}
 
-	#receipt, #receipt *{
-		visibility:visible;
-	}
-
-	#receipt{
-		position:absolute;
-		left:0;
-		top:0;
-		width:280px;
-	}
+/* Pagination & expandable orders */
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+.pagination button {
+    padding: 8px 16px;
+    font-size: 16px;
+    background: #2f6bd1;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.pagination button:hover {
+    background: #1f4fa3;
+}
+.pagination button.active {
+    background: #ad1829;
+}
+.order-card {
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    background: #fafafa;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.order-card:hover {
+    background: #f0f0f0;
+}
+.order-summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    font-weight: bold;
+}
+.order-details {
+    display: none;
+    padding: 15px;
+    border-top: 1px dashed #ccc;
+    background: white;
+    border-radius: 0 0 10px 10px;
+}
+.order-details table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.order-details th, .order-details td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+.order-details td:last-child, .order-details th:last-child {
+    text-align: right;
 }
 </style>
 </head>
@@ -614,6 +659,7 @@ ROYAL CHEF
 <button onclick="loadCategory('food')">Food</button>
 <button onclick="loadCategory('sauce')">Sauce</button>
 <button onclick="loadCategory('drinks')">Drinks</button>
+<button onclick="loadCategory('setmeal')">Set Meal</button>
 
 </div>
 
@@ -643,7 +689,9 @@ ROYAL CHEF
 
 			<button class="clear" onclick="clearOrder()">Clear Order</button>
 
-			<button class="print" onclick="showConfirmationModal()">Review Order & Pay</button>
+			<button class="print" onclick="viewSavedOrders()">Previous Orders</button>
+
+			<button class="print" onclick="showConfirmationModal()">Review Order & Save</button>
 
 			</div>
 
@@ -672,8 +720,8 @@ ROYAL CHEF
         
         <div id="selectedPaymentDisplay" class="selected-payment"></div>
         
-        <button id="printOrderBtn" class="print-order-btn" onclick="processPaymentAndPrint()">
-            PRINT ORDER
+        <button id="saveOrderBtn" class="save-order-btn" onclick="processPaymentAndSave()">
+            SAVE ORDER
         </button>
         
         <button class="close-modal-btn" onclick="closeModal()">
@@ -715,53 +763,62 @@ ROYAL CHEF
 	</div>
 </div>
 
+<!-- Saved Orders Modal (Improved) -->
+<div id="savedOrdersModal" class="modal">
+    <div class="modal-content" style="max-width:800px;">
+        <div class="modal-header">
+            Previous Orders
+        </div>
+        <div id="savedOrdersContainer" style="max-height:500px; overflow-y:auto;"></div>
+        <div id="paginationControls" class="pagination"></div>
+        <button class="close-modal-btn" onclick="closeSavedOrdersModal()">Close</button>
+    </div>
+</div>
+
 <script>
-// Creating Order History 
+// ======================== DATA STORAGE ========================
 let orderHistory = JSON.parse(localStorage.getItem("posOrders")) || [];
 
-let lastAddedItem = null;
-
+// ======================== MENU DATA ========================
 const menuData = {
-
-food:[
-	{name:"Chatpate",price:7},
-	{name:"Chicken Wings",price:10},
-	{name:"Chips",price:5},
-	{name:"Fish Cakes (4)",price:7},
-	{name:"Momo",price:10},
-	{name:"Nuggets (6)",price:5},
-	{name:"Papaya Salad",price:7},
-	{name:"S&P Ribs",price:10},
-	{name:"Sausages (4)",price:7},
-	{name:"Spicy Chips",price:7},
-	{name:"Spring Rolls (5)",price:5},
-	{name:"Kids Meal",price:10}
-],
-
-sauce:[
-	{name:"Sweet Chilli",price:2},
-	{name:"Chilli Oil",price:2},
-	{name:"Curry Sauce",price:3}
-],
-
-drinks:[
-	{name:"TEA",price:3},
-	{name:"Coke",price:3},
-	{name:"Diet Coke",price:3},
-	{name:"Tango",price:3},
-	{name:"7UP",price:3},
-	{name:"Water",price:2}
-]
-
+	food:[
+		{name:"Chatpate",price:7},
+		{name:"Chicken Wings",price:10},
+		{name:"Chips",price:5},
+		{name:"Fish Cakes (4)",price:7},
+		{name:"Momo",price:10},
+		{name:"Nuggets (6)",price:5},
+		{name:"Papaya Salad",price:7},
+		{name:"S&P Ribs",price:10},
+		{name:"Sausages (4)",price:7},
+		{name:"Spicy Chips",price:7},
+		{name:"Spring Rolls (5)",price:5},
+		{name:"Kids Meal",price:10}
+	],
+	sauce:[
+		{name:"Sweet Chilli",price:2},
+		{name:"Chilli Oil",price:2},
+		{name:"Curry Sauce",price:3}
+	],
+	drinks:[
+		{name:"TEA",price:3},
+		{name:"Coke",price:3},
+		{name:"Diet Coke",price:3},
+		{name:"Tango",price:3},
+		{name:"7UP",price:3},
+		{name:"Water",price:2}
+	]
 };
 
+// ======================== GLOBAL VARIABLES ========================
+let order = {};           // current order
 let selectedPaymentMethod = null;
-let order = {};
+let lastAddedItem = null;
 
+// ======================== UI FUNCTIONS ========================
 function loadCategory(category){
     let menu = document.getElementById("menuButtons");
     menu.innerHTML = "";
-    
     menuData[category].forEach(item=>{
         menu.innerHTML += `
         <button onclick="addItem('${item.name.replace(/'/g, "\\'")}',${item.price})">
@@ -772,32 +829,27 @@ function loadCategory(category){
     });
 }
 
-// Load food category by default
-loadCategory('food');
-
 function addItem(name, price){
-
-lastAddedItem = name;
-
+    lastAddedItem = name;
     if(order[name]){
         order[name].qty++;
-    }else{
+    } else {
         order[name] = {price: price, qty: 1};
     }
     updateOrder();
 }
 
 function increaseItem(item){
-	order[item].qty++;
-	updateOrder();
+    order[item].qty++;
+    updateOrder();
 }
 
 function decreaseItem(item){
-	order[item].qty--;
-	if(order[item].qty <= 0){
-		delete order[item];
-	}
-	updateOrder();
+    order[item].qty--;
+    if(order[item].qty <= 0){
+        delete order[item];
+    }
+    updateOrder();
 }
 
 function updateOrder(){
@@ -805,28 +857,26 @@ function updateOrder(){
     orderList.innerHTML = "";
     let total = 0;
 	
-	
     for(let item in order){
         let qty = order[item].qty;
         let price = order[item].price;
         let subtotal = qty * price;
         total += subtotal;
 
-		let highlightClass = item === lastAddedItem ? "last-added" : "";
-		orderList.innerHTML += `
-		<div class="order-row ${highlightClass}">
-		<span>${item}</span>
-		<span class="qty-controls">
-		<button onclick="decreaseItem(\`${item}\`)">−</button>
-		<span class="qty-number">${qty}</span>
-		<button onclick="increaseItem(\`${item}\`)">+</button>
-		</span>
-		<span>£${subtotal.toFixed(2)}</span>
-		</div>`;
+        let highlightClass = item === lastAddedItem ? "last-added" : "";
+        orderList.innerHTML += `
+        <div class="order-row ${highlightClass}">
+            <span>${item}</span>
+            <span class="qty-controls">
+                <button onclick="decreaseItem(\`${item}\`)">−</button>
+                <span class="qty-number">${qty}</span>
+                <button onclick="increaseItem(\`${item}\`)">+</button>
+            </span>
+            <span>£${subtotal.toFixed(2)}</span>
+        </div>`;
     }
-
     document.getElementById("total").innerText = total.toFixed(2);
-	lastAddedItem = null;
+    lastAddedItem = null;
 }
 
 function clearOrder(){
@@ -834,116 +884,38 @@ function clearOrder(){
     updateOrder();
 }
 
+// ======================== CONFIRMATION & SAVE ========================
 function showConfirmationModal() {
     if (Object.keys(order).length === 0) {
         alert("No items in order!");
         return;
     }
-    
-    // Reset selected payment
     selectedPaymentMethod = null;
     document.getElementById("selectedPaymentDisplay").style.display = "none";
-    document.getElementById("printOrderBtn").style.display = "none";
+    document.getElementById("saveOrderBtn").style.display = "none";
+    document.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
     
-    // Remove selected class from all payment buttons
-    document.querySelectorAll('.payment-btn').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    
-    // Populate order summary with three columns
-    let summaryHtml = `
-        <div class="summary-header">
-            <span class="item-col">Item</span>
-            <span>Qty</span>
-            <span>Price</span>
-        </div>
-    `;
+    let summaryHtml = `<div class="summary-header"><span class="item-col">Item</span><span>Qty</span><span>Price</span></div>`;
     let total = 0;
-    
     for (let item in order) {
         let qty = order[item].qty;
         let price = order[item].price;
         let subtotal = qty * price;
         total += subtotal;
-        
-        summaryHtml += `
-        <div class="summary-item">
-            <span class="item-name">${item}</span>
-            <span>${qty}</span>
-            <span>£${subtotal.toFixed(2)}</span>
-        </div>
-        `;
+        summaryHtml += `<div class="summary-item"><span class="item-name">${item}</span><span>${qty}</span><span>£${subtotal.toFixed(2)}</span></div>`;
     }
-    
-    summaryHtml += `
-    <div class="summary-total">
-        Total: £${total}
-    </div>
-    `;
-    
+    summaryHtml += `<div class="summary-total">Total: £${total.toFixed(2)}</div>`;
     document.getElementById("modalOrderSummary").innerHTML = summaryHtml;
-    
-    // Show modal
     document.getElementById("confirmationModal").style.display = "block";
 }
 
 function selectPayment(method) {
     selectedPaymentMethod = method;
-    
-    // Remove selected class from all payment buttons
-    document.querySelectorAll('.payment-btn').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    
-    // Add selected class to clicked button
+    document.querySelectorAll('.payment-btn').forEach(btn => btn.classList.remove('selected'));
     event.target.classList.add('selected');
-    
-    // Show selected payment and print button
     document.getElementById("selectedPaymentDisplay").innerHTML = `Payment Method: <strong>${method}</strong>`;
     document.getElementById("selectedPaymentDisplay").style.display = "block";
-    document.getElementById("printOrderBtn").style.display = "block";
-}
-
-function processPaymentAndPrint() {
-    if (!selectedPaymentMethod) {
-        alert("Please select a payment method first!");
-        return;
-    }
-    
-	//Save Order Details To Database
-	saveOrder(selectedPaymentMethod);
-	
-    // Print the receipt with payment info
-    printReceipt(selectedPaymentMethod);
-    
-    // Close modal
-    closeModal();
-    
-    // Clear order for new orders
-    clearOrder();
-}
-
-// Save Function
-function saveOrder(paymentMethod){
-
-    let total = 0;
-
-    for(let item in order){
-        total += order[item].price * order[item].qty;
-    }
-
-    let now = new Date();
-
-    let record = {
-        items: JSON.parse(JSON.stringify(order)),
-        total: total,
-        payment: paymentMethod,
-        time: now.toLocaleTimeString()
-    };
-
-    orderHistory.push(record);
-
-    localStorage.setItem("posOrders", JSON.stringify(orderHistory));
+    document.getElementById("saveOrderBtn").style.display = "block";
 }
 
 function closeModal() {
@@ -951,460 +923,246 @@ function closeModal() {
     selectedPaymentMethod = null;
 }
 
-function printReceipt(paymentMethod) {
-    let orderNumber = Date.now().toString().slice(-4)
-    let now = new Date();
-    let date = now.toLocaleDateString();
-    let time = now.toLocaleTimeString();
-    
-    let receiptItems = "";
+// ======================== SAVE ORDER TO HISTORY (NO PRINTING) ========================
+function saveCurrentOrderToHistory(paymentMethod) {
     let total = 0;
-
+    let itemsCopy = {};
     for (let item in order) {
-        let qty = order[item].qty;
-        let price = order[item].price;
-        let subtotal = qty * price;
-        total += subtotal;
-        
-        // Format price with 2 decimal places
-        let formattedSubtotal = subtotal.toFixed(2);
-        
-        // Create three-column row with fixed widths using tables for perfect alignment
-        receiptItems += `
-            <tr>
-                <td style="text-align: left; padding: 4px 0;">${item}</td>
-                <td style="text-align: center; padding: 4px 0;">${qty}</td>
-                <td style="text-align: right; padding: 4px 0;">£${formattedSubtotal}</td>
-            </tr>
+        total += order[item].price * order[item].qty;
+        itemsCopy[item] = { price: order[item].price, qty: order[item].qty };
+    }
+    let now = new Date();
+    let record = {
+        items: itemsCopy,
+        total: total,
+        payment: paymentMethod,
+        time: now.toLocaleTimeString(),
+        datetime: now.toLocaleString(),
+        id: Date.now() // unique ID for expand/collapse
+    };
+    orderHistory.unshift(record); // newest first
+    localStorage.setItem("posOrders", JSON.stringify(orderHistory));
+}
+
+function processPaymentAndSave() {
+    if (!selectedPaymentMethod) {
+        alert("Please select a payment method first!");
+        return;
+    }
+    saveCurrentOrderToHistory(selectedPaymentMethod);
+    alert("Order saved successfully!");
+    closeModal();
+    clearOrder();
+}
+
+// ======================== PREVIOUS ORDERS (PAGINATED + EXPANDABLE) ========================
+let currentPage = 1;
+const ordersPerPage = 10;
+
+function viewSavedOrders() {
+    currentPage = 1;
+    renderSavedOrders();
+    document.getElementById("savedOrdersModal").style.display = "block";
+}
+
+function renderSavedOrders() {
+    const container = document.getElementById("savedOrdersContainer");
+    const paginationDiv = document.getElementById("paginationControls");
+    
+    if (orderHistory.length === 0) {
+        container.innerHTML = "<p style='text-align:center;'>No saved orders found.</p>";
+        paginationDiv.innerHTML = "";
+        return;
+    }
+    
+    const totalPages = Math.ceil(orderHistory.length / ordersPerPage);
+    const start = (currentPage - 1) * ordersPerPage;
+    const end = start + ordersPerPage;
+    const pageOrders = orderHistory.slice(start, end);
+    
+    let html = "";
+    pageOrders.forEach((orderData, idx) => {
+        const orderId = orderData.id || `order_${start + idx}`;
+        const orderNum = `#${(start + idx + 1)}`;
+        html += `
+        <div class="order-card" onclick="toggleOrderDetails('${orderId}')">
+            <div class="order-summary-header">
+                <span><strong>${orderNum}</strong> - ${orderData.datetime}</span>
+                <span>Total: £${orderData.total.toFixed(2)}</span>
+                <span>${orderData.payment}</span>
+            </div>
+            <div id="${orderId}" class="order-details">
+                <table>
+                    <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+                    <tbody>
         `;
-    }
-
-    let printWindow = window.open('', '', 'width=400,height=700');
-    
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Receipt</title>
-            <style>
-                body {
-                    font-family: 'Courier New', monospace;
-                    width: 70mm;
-                    margin: 0 auto;
-                    padding: 3mm;
-                    background: white;
-                    font-size: 18px;
-                    line-height: 1.3;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 3mm;
-                }
-                .restaurant-name {
-                    font-size: 25px;
-                    font-weight: bold;
-                    letter-spacing: 1px;
-                    margin-bottom: 2mm;
-                }
-                .order-info {
-                    font-size: 16px;
-                    margin: 3px 0;
-                }
-                .order-number {
-                    font-size: 20px;
-                    font-weight: bold;
-                    margin: 3px 0;
-					padding: 1px;
-                    background: #f0f0f0;
-                }
-                .payment-info {
-                    font-size: 20px;
-                    font-weight: bold;
-                    margin: 3px 0;
-					padding: 1px;
-                    background: ${paymentMethod === 'Cash' ? '#d4edda' : paymentMethod === 'Card' ? '#cce5ff' : '#fff3cd'};
-                }
-                hr {
-                    border: none;
-                    border-top: 1px dashed #000;
-                    margin: 2mm 0;
-                }
-                .items {
-					font-size: 16px;
-                    margin: 3mm 0;
-					padding: 1px;
-                    width: 100%;
-                }
-                table {
-                    width: 98%;
-                    border-collapse: collapse;
-                }
-                th {
-                    text-align: left;
-                    font-weight: bold;
-                    border-bottom: 1px solid #000;
-                    padding: 3px 0;
-                }
-                th:nth-child(2) {
-                    text-align: center;
-                }
-                th:nth-child(3) {
-                    text-align: right;
-                }
-                td {
-                    padding: 3px 0;
-                }
-                td:nth-child(2) {
-                    text-align: center;
-                }
-                td:nth-child(3) {
-                    text-align: right;
-                }
-                .total-section {
-                    margin: 3px 0;
-                    text-align: right;
-                    font-size: 20px;
-                    font-weight: bold;
-                    border-top: 2px solid #000;
-                    padding-top: 2mm;
-					padding-right: 2mm;
-                }
-                .thank-you {
-                    text-align: center;
-                    margin-top: 4mm;
-                    font-size: 18px;
-                    font-weight: bold;
-                }
-                @media print {
-                    body {
-                        width: 98%;
-                        margin: 0;
-                        padding: 2mm;
-                    }
-                }
-            </style>
-        </head>
-        <body>
-			<div id="receipt">
-			<!-- receipt content -->
-
-				<div class="header">
-					<div class="restaurant-name">ROYAL CHEF</div>
-					<hr>
-					<div class="order-info">${date} ${time}</div>
-					<div class="order-number">ORDER NO: ${orderNumber}</div>
-					<div class="payment-info">PAID BY: ${paymentMethod}</div>
-					
-				</div>
-				
-				<div class="items">
-					<table>
-						<thead>
-							<tr>
-								<th>Item</th>
-								<th>Qty</th>
-								<th>Price</th>
-							</tr>
-						</thead>
-						<tbody>
-							${receiptItems}
-						</tbody>
-					</table>
-				</div>
-				
-				<div class="total-section">
-					TOTAL: £${total.toFixed(2)}
-				</div>
-				
-				<div class="thank-you">
-					Thank You!
-				</div>
-			</div>
-        </body>
-        </html>
-    `);
-    
-    printWindow.document.close();
-    printWindow.focus();
-    
-    // Small delay to ensure content is loaded
-    setTimeout(() => {
-        printWindow.print();
-    }, 250);
-}
-
-// Summary function
-function showStats(){
-
-	let cash = 0;
-	let card = 0;
-	let transfer = 0;
-	let items = {};
-
-	orderHistory.forEach(o=>{
-
-		if(o.payment === "Cash") cash += o.total;
-		if(o.payment === "Card") card += o.total;
-		if(o.payment === "Transfer") transfer += o.total;
-
-		for(let i in o.items){
-
-			if(!items[i]) items[i] = 0;
-
-			items[i] += o.items[i].qty;
-
-		}
-
-	});
-
-	let topItem = Object.entries(items).sort((a,b)=>b[1]-a[1])[0];
-
-	alert(
-	`TODAY'S SALES
-
-	Cash: £${cash.toFixed(2)}
-	Card: £${card.toFixed(2)}
-	Transfer: £${transfer.toFixed(2)}
-
-	Total: £${(cash+card+transfer).toFixed(2)}
-
-	Top Item: ${topItem ? topItem[0] : "None"}`
-	);
-
-}
-
-// Open Admin Menu
-function openAdmin(){
-
-	generateDashboard();
-
-	document.getElementById("adminPanel").style.display = "block";
-
-}
-
-// Close Admin Menu
-function closeAdmin(){
-
-	document.getElementById("adminPanel").style.display = "none";
-
-}
-
-// Generate Sales Dashboard In Admin Menu
-function generateDashboard(){
-
-	let cash = 0;
-	let card = 0;
-	let transfer = 0;
-	let items = {};
-
-	orderHistory.forEach(o=>{
-		if(o.payment === "Cash") cash += o.total;
-		if(o.payment === "Card") card += o.total;
-		if(o.payment === "Transfer") transfer += o.total;
-
-		for(let i in o.items){
-			if(!items[i]) items[i] = 0;
-			items[i] += o.items[i].qty;
-		}
-	});
-
-	let total = cash + card + transfer;
-	let sortedItems = Object.entries(items).sort((a,b)=>b[1]-a[1]);
-	let itemHtml = "";
-
-    if (sortedItems.length > 0) {
-        sortedItems.forEach(i=>{
-            itemHtml += `
-            <div class="admin-item-row">
-                <span class="admin-item-name">${i[0]}</span>
-                <span class="admin-item-qty">${i[1]}</span>
+        for (let item in orderData.items) {
+            let it = orderData.items[item];
+            let subtotal = it.price * it.qty;
+            html += `<tr><td>${item}</td><td>${it.qty}</td><td>£${subtotal.toFixed(2)}</td></tr>`;
+        }
+        html += `
+                    </tbody>
+                </table>
             </div>
-            `;
-        });
+        </div>
+        `;
+    });
+    container.innerHTML = html;
+    
+    // Pagination buttons
+    let pagHtml = `<button onclick="changePage(1)" ${currentPage===1?'disabled':''}>« First</button>
+                   <button onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>
+                   <span style="margin:0 10px;">Page ${currentPage} of ${totalPages}</span>
+                   <button onclick="changePage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>Next ›</button>
+                   <button onclick="changePage(${totalPages})" ${currentPage===totalPages?'disabled':''}>Last »</button>`;
+    paginationDiv.innerHTML = pagHtml;
+}
+
+function changePage(page) {
+    if (page < 1) page = 1;
+    const totalPages = Math.ceil(orderHistory.length / ordersPerPage);
+    if (page > totalPages) page = totalPages;
+    currentPage = page;
+    renderSavedOrders();
+}
+
+function toggleOrderDetails(orderId) {
+    const detailsDiv = document.getElementById(orderId);
+    if (detailsDiv.style.display === "none" || detailsDiv.style.display === "") {
+        detailsDiv.style.display = "block";
     } else {
-        itemHtml = `<div style="text-align:center; padding: 30px 10px; color: #999; font-style: italic;">No sales yet today</div>`;
+        detailsDiv.style.display = "none";
     }
-
-    document.getElementById("salesDashboard").innerHTML = `
-        <h3 class="admin-section-title">Today's Revenue</h3>
-        
-        <div class="admin-stats-grid">
-            <div class="admin-stat-card total-card">
-                <h4>Total Sales</h4>
-                <p class="amount">£${total.toFixed(2)}</p>
-            </div>
-            <div class="admin-stat-card">
-                <h4>Cash</h4>
-                <p class="amount" style="color: #5cb85c;">£${cash.toFixed(2)}</p>
-            </div>
-            <div class="admin-stat-card">
-                <h4>Card</h4>
-                <p class="amount" style="color: #2f6bd1;">£${card.toFixed(2)}</p>
-            </div>
-            <div class="admin-stat-card">
-                <h4>Transfer</h4>
-                <p class="amount" style="color: #f0ad4e;">£${transfer.toFixed(2)}</p>
-            </div>
-        </div>
-
-        <h3 class="admin-section-title">Items Sold</h3>
-        
-        <div class="admin-items-container">
-            ${itemHtml}
-        </div>
-    `;
 }
 
-// Print Summary of Daily Sales
-function printSummary() {
+function closeSavedOrdersModal() {
+    document.getElementById("savedOrdersModal").style.display = "none";
+}
+
+// ======================== ADMIN DASHBOARD ========================
+function generateDashboard(){
     let cash = 0, card = 0, transfer = 0;
     let items = {};
-
     orderHistory.forEach(o => {
-        if (o.payment === "Cash") cash += o.total;
-        if (o.payment === "Card") card += o.total;
-        if (o.payment === "Transfer") transfer += o.total;
-
-        for (let i in o.items) {
-            if (!items[i]) items[i] = 0;
+        if(o.payment === "Cash") cash += o.total;
+        if(o.payment === "Card") card += o.total;
+        if(o.payment === "Transfer") transfer += o.total;
+        for(let i in o.items){
+            if(!items[i]) items[i] = 0;
             items[i] += o.items[i].qty;
         }
     });
-
     let total = cash + card + transfer;
+    let sortedItems = Object.entries(items).sort((a,b)=>b[1]-a[1]);
+    let itemHtml = sortedItems.length ? sortedItems.map(i=>`
+        <div class="admin-item-row">
+            <span class="admin-item-name">${i[0]}</span>
+            <span class="admin-item-qty">${i[1]}</span>
+        </div>`).join('') : `<div style="text-align:center; padding:30px 10px; color:#999;">No sales yet today</div>`;
+    
+    document.getElementById("salesDashboard").innerHTML = `
+        <h3 class="admin-section-title">Today's Revenue</h3>
+        <div class="admin-stats-grid">
+            <div class="admin-stat-card total-card"><h4>Total Sales</h4><p class="amount">£${total.toFixed(2)}</p></div>
+            <div class="admin-stat-card"><h4>Cash</h4><p class="amount" style="color:#5cb85c;">£${cash.toFixed(2)}</p></div>
+            <div class="admin-stat-card"><h4>Card</h4><p class="amount" style="color:#2f6bd1;">£${card.toFixed(2)}</p></div>
+            <div class="admin-stat-card"><h4>Transfer</h4><p class="amount" style="color:#f0ad4e;">£${transfer.toFixed(2)}</p></div>
+        </div>
+        <h3 class="admin-section-title">Items Sold</h3>
+        <div class="admin-items-container">${itemHtml}</div>
+    `;
+}
 
-    // Generate HTML Table for Items
+function openAdmin(){
+    generateDashboard();
+    document.getElementById("adminPanel").style.display = "block";
+}
+function closeAdmin(){ document.getElementById("adminPanel").style.display = "none"; }
+
+function printSummary() {
+    let cash = 0, card = 0, transfer = 0, items = {};
+    orderHistory.forEach(o => {
+        if(o.payment === "Cash") cash += o.total;
+        if(o.payment === "Card") card += o.total;
+        if(o.payment === "Transfer") transfer += o.total;
+        for(let i in o.items) items[i] = (items[i]||0) + o.items[i].qty;
+    });
+    let total = cash + card + transfer;
     let itemRows = "";
-    for (let i in items) {
-        let name = i.substring(0, 18);
-        let qty = items[i].toString().padStart(2, " ");
+    for(let i in items){
         itemRows += `<tr><td>${i}</td><td class="qty">${items[i]}</td></tr>`;
     }
-
     let printWindow = window.open("", "Summary", "width=300");
-
     printWindow.document.write(`
-    <html>
-        <head>
-            <style>
-                /* Remove browser headers/footers and set narrow margins */
-                @page { 
-                    size: 70mm auto; 
-                    margin: 0; 
-                }
-                
-                body { 
-                    font-family: 'Courier New', Courier, monospace; 
-                    width: 70mm; /* Match your printer paper */
-                    margin: 0;
-                    padding: 2mm;
-                    font-size: 16px;
-					zoom: 1.2;
-                    color: #000;
-					-webkit-print-color-adjust: exact;
-                }
-
-               .header { text-align: center; font-weight: bold; font-size: 22px; }
-                .divider { border-top: 1px dashed #000; margin: 5px 0; }
-                .flex-row { display: flex; justify-content: space-between; font-size: 18px; }
-                .total-row { font-weight: bold; font-size: 20px; margin-top: 5px; }
-                
-                table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; }
-                th { text-align: left; border-bottom: 1px solid #000; }
-                .qty { text-align: right; width: 30px; }
-                .footer { text-align: center; margin-top: 15px; padding-bottom: 20px; }
-            </style>
-        </head>
+        <html><head><style>
+            @page { size: 70mm auto; margin: 0; }
+            body { font-family: 'Courier New', monospace; width: 70mm; margin: 0; padding: 2mm; font-size: 16px; -webkit-print-color-adjust: exact; }
+            .header { text-align: center; font-weight: bold; font-size: 22px; }
+            .divider { border-top: 1px dashed #000; margin: 5px 0; }
+            .flex-row { display: flex; justify-content: space-between; font-size: 18px; }
+            .total-row { font-weight: bold; font-size: 20px; margin-top: 5px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 16px; }
+            th { text-align: left; border-bottom: 1px solid #000; }
+            .qty { text-align: right; width: 30px; }
+            .footer { text-align: center; margin-top: 15px; }
+        </style></head>
         <body>
             <div class="header">ROYAL CHEF</div>
-            <div style="text-align:center; font-size: 14px;">Sales Summary</div>
+            <div style="text-align:center;">Sales Summary</div>
             <div class="divider"></div>
-            
             <div class="flex-row"><span>Cash:</span><span>£${cash.toFixed(2)}</span></div>
             <div class="flex-row"><span>Card:</span><span>£${card.toFixed(2)}</span></div>
             <div class="flex-row"><span>Transfer:</span><span>£${transfer.toFixed(2)}</span></div>
-            
             <div class="divider"></div>
             <div class="flex-row total-row"><span>TOTAL:</span><span>£${total.toFixed(2)}</span></div>
-
-            <table>
-                <thead>
-                    <tr><th>Items Sold</th><th class="qty">Qty</th></tr>
-                </thead>
-                <tbody>${itemRows}</tbody>
-            </table>
-
+            <table><thead><tr><th>Items Sold</th><th class="qty">Qty</th></tr></thead><tbody>${itemRows}</tbody></table>
             <div class="footer">Thank You</div>
-        </body>
-    </html>
+        </body></html>
     `);
-
     printWindow.document.close();
-    
-    // Slight delay to ensure styles load before the print dialog pops up
-    setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-    }, 250);
+    setTimeout(() => { printWindow.print(); printWindow.close(); }, 250);
 }
 
-// Export JSON File Of Daily Sales
 function exportSales(){
-
-	let data = JSON.stringify(orderHistory,null,2);
-
-	let blob = new Blob([data],{type:"application/json"});
-
-	let a = document.createElement("a");
-
-	a.href = URL.createObjectURL(blob);
-
-	a.download = "royalchef-sales.json";
-
-	a.click();
-
+    let data = JSON.stringify(orderHistory, null, 2);
+    let blob = new Blob([data], {type:"application/json"});
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "royalchef-sales.json";
+    a.click();
 }
 
-// Clear Sales Data
 function resetSales(){
-
-    const pin = prompt("Enter Admin PIN");
-
-    if(pin !== "0000"){
-        alert("Incorrect PIN");
-        return;
-    }
-
+    let pin = prompt("Enter Admin PIN");
+    if(pin !== "0000"){ alert("Incorrect PIN"); return; }
     if(confirm("Reset all sales data for today?")){
-		localStorage.removeItem("posOrders");
-		orderHistory = [];
-		alert("Sales Reset");
-		generateDashboard();
+        localStorage.removeItem("posOrders");
+        orderHistory = [];
+        alert("Sales Reset");
+        generateDashboard();
+        if(document.getElementById("savedOrdersModal").style.display === "block") renderSavedOrders();
     }
 }
+
+function backupSalesData(){
+    let data = localStorage.getItem("posOrders");
+    if(!data) return;
+    let blob = new Blob([data], {type:"application/json"});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "royalchef_backup_" + new Date().toISOString() + ".json";
+    a.click();
+}
+setInterval(backupSalesData, 600000);
+
+// ======================== INIT ========================
+loadCategory('food');
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
+    navigator.serviceWorker.register("service-worker.js");
 }
-
-function backupSalesData() {
-
-  const data = localStorage.getItem("orderHistory");
-
-  if (!data) return;
-
-  const blob = new Blob([data], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "royalchef_backup_" + new Date().toISOString() + ".json";
-  a.click();
-}
-
-setInterval(backupSalesData, 600000);
 </script>
-
-
 </body>
 </html>
